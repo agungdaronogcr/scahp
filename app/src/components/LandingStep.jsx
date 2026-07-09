@@ -43,6 +43,15 @@ export default function LandingStep({ onNext, hasSavedData, onLoadSaved, onClear
           <p>
             Hasil jawaban akan diolah secara agregat untuk menghasilkan bobot prioritas kriteria, subkriteria, dan peringkat alternatif data analytics stack. Tidak ada jawaban benar atau salah. Yang diperlukan adalah penilaian yang konsisten dan sesuai dengan pengalaman profesional Bapak/Ibu.
           </p>
+           <p>
+            Terima kasih atas perkenan Bapak/Ibu untuk mengisi kuesioner penelitian. Semoga Tuhan Yang Maha Kuasa selalu memberikan keberlimpahan kepada kita semua.
+          </p>
+          <p>
+            Salam hormat,
+          </p>
+          <p>
+            Agung Darono
+          </p>
         </div>
       </div>
 
