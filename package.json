@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
-  "homepage": "https://ryanagatha.github.io/apps_kuesioner",
+  "homepage": "https://agungdaronogcr.github.io/scahp",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
