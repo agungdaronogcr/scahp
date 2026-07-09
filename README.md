@@ -1,16 +1,28 @@
-# React + Vite
+# scahp
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Isi root repo ini adalah **hasil build statis** (`index.html`, `assets/`) yang di-serve langsung oleh GitHub Pages dari branch `main`.
 
-Currently, two official plugins are available:
+Source code aplikasinya ada di folder [`/app`](./app) (React + Vite + Tailwind).
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Development
 
-## React Compiler
+```bash
+cd app
+npm install
+npm run dev
+```
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Deploy ulang ke Pages
 
-## Expanding the ESLint configuration
+Repo ini pakai GitHub Pages source **"Deploy from a branch: main"** (bukan GitHub Actions), jadi tidak ada auto-build. Setiap ada perubahan, build manual lalu salin hasilnya ke root:
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+```bash
+cd app
+npm run build
+cd ..
+rm -rf assets index.html favicon.svg icons.svg
+cp -r app/dist/. .
+git add -A
+git commit -m "Deploy: <deskripsi perubahan>"
+git push
+```
