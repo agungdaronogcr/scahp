@@ -1,5 +1,14 @@
 import React from 'react';
-import { ShieldCheck, Info } from 'lucide-react';
+import { ShieldCheck, CheckCircle2 } from 'lucide-react';
+
+const CONSENT_POINTS = [
+  'Partisipasi Bapak/Ibu bersifat sukarela dan dapat dihentikan sewaktu-waktu tanpa konsekuensi.',
+  'Data profil digunakan hanya untuk memastikan kesesuaian responden dengan kebutuhan penelitian berbasis penilaian pakar.',
+  'Jawaban digunakan untuk kepentingan akademik dan hasil penelitian disajikan dalam bentuk rekapitulasi kelompok.',
+  'Kuesioner tidak meminta data rahasia Wajib Pajak, dokumen pemeriksaan, atau informasi yang dilindungi.',
+  'Jawaban akhir disimpan secara aman dalam Google Sheet privat yang hanya dapat diakses oleh tim penelitian.',
+  'Draf pengisian dapat disimpan sementara di browser dan/atau sebagai status DRAFT pada Google Sheet.'
+];
 
 export default function ConsentStep({ onNext, onPrev, consentChecked, setConsentChecked }) {
   const handleProceed = () => {
@@ -15,44 +24,19 @@ export default function ConsentStep({ onNext, onPrev, consentChecked, setConsent
           <ShieldCheck className="w-8 h-8" />
         </div>
         <h2 className="text-2xl font-bold text-slate-900 mb-2">Persetujuan Keikutsertaan</h2>
-        <p className="text-slate-500">Lembar Persetujuan Responden (Informed Consent)</p>
+        <p className="text-slate-500">Sebelum memulai pengisian, mohon membaca pernyataan berikut dengan saksama.</p>
       </div>
 
-      <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 md:p-8 mb-6 text-slate-600 leading-relaxed text-sm md:text-base space-y-4">
-        <p>
-          Sebelum memulai pengisian, mohon membaca pernyataan berikut dengan saksama.
-        </p>
-
-        <p>
-          Partisipasi Bapak/Ibu dalam kuesioner ini bersifat sukarela. Bapak/Ibu dapat menghentikan pengisian sewaktu-waktu tanpa konsekuensi apa pun.
-        </p>
-
-        <p>
-          Data profil responden, seperti nama, instansi/unit kerja, jabatan atau peran, bidang keahlian, dan lama pengalaman, digunakan hanya untuk memastikan kesesuaian responden dengan kebutuhan penelitian berbasis penilaian pakar.
-        </p>
-
-        <p>
-          Jawaban Bapak/Ibu akan digunakan untuk kepentingan akademik, khususnya dalam penyusunan prioritas pemilihan <strong>data analytics stack</strong> untuk <strong>e-Audit</strong> dalam pemeriksaan pajak. Hasil penelitian akan disajikan dalam bentuk rekapitulasi kelompok, sehingga identitas individual responden tidak ditampilkan secara terbuka.
-        </p>
-
-        <p>
-          Kuesioner ini tidak meminta data rahasia Wajib Pajak, dokumen pemeriksaan, atau informasi lain yang dilindungi ketentuan kerahasiaan jabatan. Apabila terdapat pertanyaan terbuka, mohon memberikan jawaban dalam bentuk umum tanpa menyebutkan identitas Wajib Pajak atau kasus pemeriksaan tertentu.
-        </p>
-
-        <p>
-          Pengisian kuesioner diperkirakan memerlukan waktu sekitar <strong>15–20 menit</strong>, karena mencakup validasi relevansi dan perbandingan berpasangan dengan skala AHP.
-        </p>
-
-        <p>
-          Penilaian Bapak/Ibu akan diolah menggunakan prosedur AHP, termasuk agregasi penilaian pakar dan pengujian konsistensi. Uji konsistensi digunakan untuk menilai keteraturan logis jawaban, bukan untuk menilai benar atau salahnya pendapat responden.
-        </p>
-
-        <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 flex gap-3 text-xs md:text-sm text-blue-800">
-          <Info className="w-5 h-5 shrink-0" />
-          <p>
-            Pernyataan persetujuan di bawah ini diperlukan untuk memastikan bahwa Bapak/Ibu memahami tujuan penelitian dan bersedia berpartisipasi secara sukarela.
-          </p>
-        </div>
+      <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 md:p-8 mb-6">
+        <h3 className="font-bold text-slate-800 text-sm uppercase tracking-wider mb-4">Pernyataan Persetujuan</h3>
+        <ul className="space-y-3">
+          {CONSENT_POINTS.map((point, idx) => (
+            <li key={idx} className="flex items-start gap-2.5 text-sm md:text-base text-slate-600 leading-relaxed">
+              <CheckCircle2 className="w-5 h-5 text-green-600 shrink-0 mt-0.5" />
+              <span>{point}</span>
+            </li>
+          ))}
+        </ul>
       </div>
 
       {/* Checkbox */}
@@ -65,9 +49,10 @@ export default function ConsentStep({ onNext, onPrev, consentChecked, setConsent
             className="w-5 h-5 rounded border-slate-300 text-blue-900 focus:ring-blue-900 mt-0.5"
           />
           <span className="text-xs md:text-sm text-slate-700 font-medium leading-snug">
-            Saya telah membaca penjelasan di atas, memahami tujuan penelitian ini, dan bersedia secara sukarela berpartisipasi sebagai responden. Saya juga memahami bahwa jawaban saya akan digunakan secara agregat untuk kepentingan penelitian akademik.
+            Saya telah membaca dan memahami informasi di atas serta bersedia berpartisipasi dalam penelitian ini.
           </span>
         </label>
+        <p className="text-[11px] text-slate-400 mt-2 pl-8">Tombol "Lanjut" aktif setelah kotak persetujuan dipilih.</p>
       </div>
 
       {/* Buttons */}
@@ -87,7 +72,7 @@ export default function ConsentStep({ onNext, onPrev, consentChecked, setConsent
               : 'bg-slate-200 text-slate-400 cursor-not-allowed'
           }`}
         >
-          Setuju & Lanjut
+          Lanjut
         </button>
       </div>
     </div>

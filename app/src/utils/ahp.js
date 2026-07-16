@@ -213,12 +213,6 @@ export function flattenPairwiseAnswers(pairwise = {}) {
     addAnswer('criteria', 'goal', leftCode, rightCode, answer);
   });
 
-  Object.entries(pairwise.subcriteria || {}).forEach(([key, answer]) => {
-    const [leftCode, rightCode] = key.split('-');
-    const parentCode = leftCode?.split('.')[0] || '';
-    addAnswer('subcriteria', parentCode, leftCode, rightCode, answer);
-  });
-
   Object.entries(pairwise.alternatives || {}).forEach(([key, answer]) => {
     const parts = key.split('-');
     const parentCode = parts[1] || '';

@@ -1,12 +1,12 @@
 import React from 'react';
-import { ClipboardList, Award, ArrowRight, Play, BookOpen } from 'lucide-react';
+import { ClipboardList, ArrowRight, Play, BookOpen, ShieldCheck, Clock, GitCompareArrows } from 'lucide-react';
 import { CRITERIA, ALTERNATIVES } from '../data/constants';
 
 export default function LandingStep({ onNext, hasSavedData, onLoadSaved, onClearSaved }) {
   return (
     <div className="max-w-4xl mx-auto py-8 px-4">
       {/* Hero Section */}
-      <div className="text-center mb-12">
+      <div className="text-center mb-8">
         <div className="inline-flex items-center justify-center p-3 bg-blue-50 text-blue-900 rounded-2xl mb-4 border border-blue-100 shadow-sm">
           <ClipboardList className="w-8 h-8" />
         </div>
@@ -14,8 +14,24 @@ export default function LandingStep({ onNext, hasSavedData, onLoadSaved, onClear
           Pemilihan Data Analytics Stack untuk e-Audit dalam Pemeriksaan Pajak
         </h1>
         <p className="text-lg text-slate-600 max-w-2xl mx-auto">
-          Kuesioner Penelitian Pengambilan Keputusan Pakar berbasis <strong>Analytic Hierarchy Process (AHP)</strong>
+          Penelitian ini menghimpun penilaian pakar untuk menentukan konfigurasi <strong>data analytics stack</strong> yang paling sesuai bagi pelaksanaan e-Audit dalam pemeriksaan pajak.
         </p>
+      </div>
+
+      {/* Quick Facts */}
+      <div className="grid grid-cols-3 gap-3 max-w-lg mx-auto mb-10">
+        <div className="bg-white border border-slate-150 rounded-xl p-3 text-center shadow-sm">
+          <ShieldCheck className="w-5 h-5 text-blue-900 mx-auto mb-1" />
+          <div className="text-[11px] font-semibold text-slate-600">Aman &amp; rahasia</div>
+        </div>
+        <div className="bg-white border border-slate-150 rounded-xl p-3 text-center shadow-sm">
+          <Clock className="w-5 h-5 text-blue-900 mx-auto mb-1" />
+          <div className="text-[11px] font-semibold text-slate-600">20–30 menit</div>
+        </div>
+        <div className="bg-white border border-slate-150 rounded-xl p-3 text-center shadow-sm">
+          <GitCompareArrows className="w-5 h-5 text-blue-900 mx-auto mb-1" />
+          <div className="text-[11px] font-semibold text-slate-600">40 perbandingan</div>
+        </div>
       </div>
 
       {/* Main Info Card */}
@@ -26,22 +42,19 @@ export default function LandingStep({ onNext, hasSavedData, onLoadSaved, onClear
         </h2>
         <div className="prose text-slate-600 leading-relaxed text-sm md:text-base space-y-4">
           <p>
-            Selamat datang. Kuesioner ini merupakan bagian dari penelitian berjudul <strong>“Pemilihan Data Analytics Stack untuk e-Audit dalam Pemeriksaan Pajak: Pendekatan Analytic Hierarchy Process.”</strong>
+            Selamat datang. Kuesioner ini merupakan bagian dari penelitian berjudul <strong>"Pemilihan Data Analytics Stack untuk e-Audit dalam Pemeriksaan Pajak: Pendekatan Analytic Hierarchy Process."</strong>
           </p>
           <p>
-            Penelitian ini berangkat dari kebutuhan pemeriksaan pajak yang semakin banyak menggunakan data elektronik. Dalam praktik <strong>e-Audit</strong>, pemeriksa tidak hanya perlu memperoleh data dari Wajib Pajak, tetapi juga memahami struktur data, menyiapkan data agar dapat dianalisis, menjalankan pengujian audit, menyajikan hasil analisis, serta menjaga keamanan, integritas, dan keterlacakan proses pengolahan data.
+            Penelitian ini berangkat dari kebutuhan pemeriksaan pajak yang semakin banyak menggunakan data elektronik. Dalam praktik <strong>e-Audit</strong>, pemeriksa tidak hanya perlu memperoleh data dari Wajib Pajak, tetapi juga menyiapkan dan mengelola data agar dapat dianalisis, menjalankan pengujian audit dan data mining, menyajikan hasil analisis, serta mempertimbangkan kelayakan operasional dari seluruh konfigurasi yang digunakan.
           </p>
           <p>
-            Fokus penelitian ini bukan memilih satu aplikasi audit tertentu, melainkan menilai <strong>konfigurasi data analytics stack</strong> yang paling sesuai untuk mendukung alur kerja e-Audit secara <em>end-to-end</em>. Data analytics stack dalam penelitian ini dipahami sebagai kombinasi perangkat dan prosedur yang mendukung konektivitas data, ingestion, data preparation, data management, audit testing, advanced analytics, reporting, serta governance dan security.
+            Fokus penelitian ini bukan memilih satu aplikasi audit tertentu, melainkan menilai <strong>konfigurasi data analytics stack</strong> yang bekerja secara terpadu untuk memperoleh, menyiapkan, menyimpan, menguji, menambang, memvisualisasikan, dan melaporkan data elektronik dalam pemeriksaan pajak.
           </p>
           <p>
-            Bapak/Ibu diundang sebagai responden karena memiliki pengalaman atau pemahaman yang relevan dengan pemeriksaan pajak, e-Audit, audit data analytics, sistem informasi, atau pengembangan aplikasi pendukung pemeriksaan. Penilaian Bapak/Ibu diperlukan untuk menentukan tingkat kepentingan kriteria, subkriteria, dan alternatif stack berdasarkan pertimbangan profesional.
+            Bapak/Ibu diundang sebagai responden karena memiliki pengalaman atau pemahaman yang relevan dengan pemeriksaan pajak, e-Audit, atau data analytics. Kuesioner ini menggunakan metode <strong>Analytic Hierarchy Process (AHP)</strong>: Bapak/Ibu akan diminta melakukan perbandingan berpasangan untuk menentukan kriteria dan alternatif stack mana yang lebih penting atau lebih sesuai berdasarkan pertimbangan profesional.
           </p>
           <p>
-            Kuesioner ini menggunakan metode <strong>Analytic Hierarchy Process (AHP)</strong>. Bapak/Ibu akan diminta menilai relevansi kriteria, subkriteria, dan alternatif, kemudian melakukan perbandingan berpasangan untuk menentukan elemen mana yang lebih penting atau lebih sesuai dalam konteks e-Audit pemeriksaan pajak.
-          </p>
-          <p>
-            Hasil jawaban akan diolah secara agregat untuk menghasilkan bobot prioritas kriteria, subkriteria, dan peringkat alternatif data analytics stack. Tidak ada jawaban benar atau salah. Yang diperlukan adalah penilaian yang konsisten dan sesuai dengan pengalaman profesional Bapak/Ibu.
+            Hasil jawaban akan diolah secara agregat untuk menghasilkan bobot prioritas kriteria dan peringkat alternatif data analytics stack. Tidak ada jawaban benar atau salah — yang diperlukan adalah penilaian yang konsisten dan sesuai dengan pengalaman profesional Bapak/Ibu.
           </p>
            <p>
             Terima kasih atas perkenan Bapak/Ibu untuk mengisi kuesioner penelitian. Semoga Tuhan Yang Maha Kuasa selalu memberikan keberlimpahan kepada kita semua.
@@ -60,10 +73,10 @@ export default function LandingStep({ onNext, hasSavedData, onLoadSaved, onClear
         {/* Criteria Summary */}
         <div className="bg-slate-50 rounded-2xl p-6 border border-slate-200/60">
           <h3 className="font-bold text-slate-850 mb-3 text-sm tracking-wider uppercase text-blue-950">
-            6 Kriteria Evaluasi
+            5 Kriteria Evaluasi
           </h3>
           <ul className="space-y-2.5">
-            {CRITERIA.map((c, i) => (
+            {CRITERIA.map((c) => (
               <li key={c.code} className="flex gap-3 items-start text-xs md:text-sm text-slate-700">
                 <span className="font-semibold text-blue-900 bg-blue-100/60 px-1.5 py-0.5 rounded text-xs">
                   {c.code}
@@ -133,7 +146,7 @@ export default function LandingStep({ onNext, hasSavedData, onLoadSaved, onClear
             onClick={onNext}
             className="inline-flex items-center gap-2 px-8 py-4 bg-blue-900 hover:bg-blue-950 text-white font-bold rounded-2xl shadow-md transition duration-200 group transform hover:-translate-y-0.5"
           >
-            Mulai Pengisian Kuesioner
+            Mulai Kuesioner
             <Play className="w-5 h-5 fill-current text-white/90 group-hover:translate-x-0.5 transition-transform" />
           </button>
         )}

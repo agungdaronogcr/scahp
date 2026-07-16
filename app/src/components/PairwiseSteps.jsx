@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { HelpCircle, ChevronLeft, ChevronRight, AlertTriangle, AlertCircle, RefreshCw } from 'lucide-react';
-import { CRITERIA, SUBCRITERIA, ALTERNATIVES } from '../data/constants';
+import { ChevronRight, AlertTriangle, AlertCircle } from 'lucide-react';
+import { CRITERIA, ALTERNATIVES } from '../data/constants';
 import { generatePairwiseCombinations, evaluateAHPSection } from '../utils/ahp';
 
 // Individual Row Component for Pairwise Question
@@ -25,7 +25,7 @@ function PairwiseRow({ leftItem, rightItem, value, onChange, index, total }) {
     onChange({ selected, intensity, reason: e.target.value });
   };
 
-  const intensityOptions = [2, 3, 4, 5, 6, 7, 8, 9];
+  const intensityOptions = [3, 5, 7, 9];
 
   return (
     <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 md:p-6 mb-5">
@@ -50,7 +50,7 @@ function PairwiseRow({ leftItem, rightItem, value, onChange, index, total }) {
         >
           <div>
             <div className="font-extrabold text-[10px] uppercase tracking-wider text-slate-400 mb-1">
-              Elemen Kiri
+              {leftItem.code}
             </div>
             <div className="font-bold text-slate-800 text-sm md:text-base leading-snug">
               {leftItem.name || leftItem.code}
@@ -79,7 +79,7 @@ function PairwiseRow({ leftItem, rightItem, value, onChange, index, total }) {
                 : 'border-slate-200 bg-white hover:border-slate-350 text-slate-650'
             }`}
           >
-            Sama Penting
+            Sama
             <div className="text-[10px] text-slate-400 font-normal mt-0.5">Skor = 1</div>
           </button>
         </div>
@@ -96,7 +96,7 @@ function PairwiseRow({ leftItem, rightItem, value, onChange, index, total }) {
         >
           <div>
             <div className="font-extrabold text-[10px] uppercase tracking-wider text-slate-400 mb-1">
-              Elemen Kanan
+              {rightItem.code}
             </div>
             <div className="font-bold text-slate-800 text-sm md:text-base leading-snug">
               {rightItem.name || rightItem.code}
@@ -119,7 +119,7 @@ function PairwiseRow({ leftItem, rightItem, value, onChange, index, total }) {
       {selected && selected !== 'equal' && (
         <div className="mt-4 border-t border-slate-100 pt-4 animate-fadeIn">
           <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2.5">
-            Tingkat Keunggulan ({selected === 'left' ? 'Kiri' : 'Kanan'} Lebih Penting/Sesuai):
+            Tingkat Keunggulan ({selected === 'left' ? leftItem.code : rightItem.code} Lebih Penting/Sesuai):
             <span className="text-sm font-extrabold text-blue-900 ml-1.5">{intensity}</span>
           </label>
           <div className="flex flex-wrap gap-2">
@@ -139,10 +139,10 @@ function PairwiseRow({ leftItem, rightItem, value, onChange, index, total }) {
             ))}
           </div>
           <div className="flex justify-between text-[10px] text-slate-400 font-semibold mt-1 px-1">
-            <span>Sedikit Lebih ({selected === 'left' ? 'Kiri' : 'Kanan'} = 3)</span>
-            <span>Lebih Penting ({selected === 'left' ? 'Kiri' : 'Kanan'} = 5)</span>
-            <span>Sangat Lebih ({selected === 'left' ? 'Kiri' : 'Kanan'} = 7)</span>
-            <span>Mutlak Lebih ({selected === 'left' ? 'Kiri' : 'Kanan'} = 9)</span>
+            <span>Sedikit Lebih (3)</span>
+            <span>Lebih Penting (5)</span>
+            <span>Sangat Lebih (7)</span>
+            <span>Mutlak Lebih (9)</span>
           </div>
         </div>
       )}
@@ -154,7 +154,7 @@ function PairwiseRow({ leftItem, rightItem, value, onChange, index, total }) {
             type="text"
             value={reason}
             onChange={handleReason}
-            placeholder="Alasan singkat pilihan Anda (opsional)..."
+            placeholder="Alasan / catatan singkat atas penilaian Anda (opsional)..."
             className="w-full px-3 py-2 rounded-lg border border-slate-200 text-xs focus:ring-blue-900 focus:border-blue-900"
           />
         </div>
@@ -163,7 +163,7 @@ function PairwiseRow({ leftItem, rightItem, value, onChange, index, total }) {
   );
 }
 
-// 1. CRITERIA PAIRWISE STEP (15 comparisons, step-by-step)
+// 1. CRITERIA PAIRWISE STEP (10 comparisons, step-by-step)
 export function PairwiseCriteriaStep({ onNext, onPrev, answers, setAnswers }) {
   const pairs = generatePairwiseCombinations(CRITERIA);
   const [currentIdx, setCurrentIdx] = useState(0);
@@ -206,7 +206,6 @@ export function PairwiseCriteriaStep({ onNext, onPrev, answers, setAnswers }) {
   };
 
   const jumpTo = (idx) => {
-    // Only allow jumping if the current question is answered or we go backwards
     if (idx < currentIdx || answers.criteria?.[`${pairs[idx - 1]?.left.code}-${pairs[idx - 1]?.right.code}`]?.selected) {
       setCurrentIdx(idx);
       setErrors('');
@@ -216,8 +215,8 @@ export function PairwiseCriteriaStep({ onNext, onPrev, answers, setAnswers }) {
   return (
     <div className="max-w-3xl mx-auto py-8 px-4">
       <div className="text-center mb-6">
-        <h2 className="text-2xl font-bold text-slate-900 mb-2">Perbandingan Berpasangan: Kriteria Utama</h2>
-        <p className="text-slate-500">Bandingkan 6 kriteria utama secara berpasangan terhadap tujuan penelitian</p>
+        <h2 className="text-2xl font-bold text-slate-900 mb-2">Perbandingan Berpasangan Antarkriteria</h2>
+        <p className="text-slate-500">Bandingkan tingkat kepentingan relatif antara dua kriteria. Terdapat 10 pasangan.</p>
       </div>
 
       {/* Progress Circles */}
@@ -226,7 +225,7 @@ export function PairwiseCriteriaStep({ onNext, onPrev, answers, setAnswers }) {
           const pairKey = `${p.left.code}-${p.right.code}`;
           const isAnswered = !!answers.criteria?.[pairKey]?.selected;
           const isActive = idx === currentIdx;
-          
+
           return (
             <button
               key={pairKey}
@@ -245,9 +244,8 @@ export function PairwiseCriteriaStep({ onNext, onPrev, answers, setAnswers }) {
         })}
       </div>
 
-      {/* Context Box */}
       <div className="bg-slate-50 border border-slate-200/60 rounded-xl p-4 mb-4 text-xs md:text-sm text-slate-600">
-        <strong>Tujuan:</strong> Menentukan data analytics stack yang paling tepat untuk mendukung pelaksanaan e-Audit dalam pemeriksaan pajak.
+        {currentIdx + 1} dari {pairs.length} perbandingan
       </div>
 
       {/* Question Card */}
@@ -287,21 +285,31 @@ export function PairwiseCriteriaStep({ onNext, onPrev, answers, setAnswers }) {
   );
 }
 
-// 2. SUBCRITERIA PAIRWISE STEP (Grouped: 6 screens of 3 comparisons each)
-export function PairwiseSubcriteriaStep({ onNext, onPrev, answers, setAnswers }) {
+// 2. ALTERNATIVES PAIRWISE STEP (Grouped: 5 screens of 6 comparisons each = 30 total)
+export function PairwiseAlternativesStep({ onNext, onPrev, answers, setAnswers }) {
   const [currentCritIdx, setCurrentCritIdx] = useState(0);
   const [warnings, setWarnings] = useState('');
 
   const currentCriterion = CRITERIA[currentCritIdx];
-  const subs = SUBCRITERIA.filter(s => s.parent === currentCriterion.code);
-  const subPairs = generatePairwiseCombinations(subs);
+  const altPairs = generatePairwiseCombinations(ALTERNATIVES);
 
-  // Consistency Ratio Check
+  const getAnswersKeyPrefix = (critCode) => `alt-${critCode}`;
+
+  // Evaluate Consistency for current criterion
   const checkConsistency = () => {
-    const subCodes = subs.map(s => s.code);
-    const result = evaluateAHPSection(subCodes, answers.subcriteria || {});
+    const altCodes = ALTERNATIVES.map(a => a.code);
+    const subAnswers = {};
+    altPairs.forEach(p => {
+      const answerKey = `${getAnswersKeyPrefix(currentCriterion.code)}-${p.left.code}-${p.right.code}`;
+      const ans = answers.alternatives?.[answerKey];
+      if (ans) {
+        subAnswers[`${p.left.code}-${p.right.code}`] = ans;
+      }
+    });
+
+    const result = evaluateAHPSection(altCodes, subAnswers);
     if (result.cr > 0.10) {
-      setWarnings(`Consistency Ratio (CR) = ${result.cr}. Pilihan Anda pada subkriteria ${currentCriterion.code} tidak konsisten (CR > 0.10). Kami menyarankan untuk meninjau kembali pilihan Anda agar logis.`);
+      setWarnings(`Consistency Ratio (CR) = ${result.cr}. Pilihan Anda pada kriteria ${currentCriterion.code} tidak konsisten (CR > 0.10). Kami menyarankan untuk meninjau kembali pilihan Anda agar konsisten.`);
     } else {
       setWarnings('');
     }
@@ -309,22 +317,23 @@ export function PairwiseSubcriteriaStep({ onNext, onPrev, answers, setAnswers })
 
   useEffect(() => {
     checkConsistency();
-  }, [answers.subcriteria, currentCritIdx]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [answers.alternatives, currentCritIdx]);
 
   const handleRowChange = (key, val) => {
     setAnswers(prev => ({
       ...prev,
-      subcriteria: {
-        ...prev.subcriteria,
+      alternatives: {
+        ...prev.alternatives,
         [key]: val
       }
     }));
   };
 
   const validateAllAnswered = () => {
-    return subPairs.every(p => {
-      const key = `${p.left.code}-${p.right.code}`;
-      return !!answers.subcriteria?.[key]?.selected;
+    return altPairs.every(p => {
+      const key = `${getAnswersKeyPrefix(currentCriterion.code)}-${p.left.code}-${p.right.code}`;
+      return !!answers.alternatives?.[key]?.selected;
     });
   };
 
@@ -351,265 +360,81 @@ export function PairwiseSubcriteriaStep({ onNext, onPrev, answers, setAnswers })
     }
   };
 
-  return (
-    <div className="max-w-3xl mx-auto py-8 px-4">
-      <div className="text-center mb-6">
-        <h2 className="text-2xl font-bold text-slate-900 mb-1">Perbandingan Berpasangan: Subkriteria</h2>
-        <p className="text-slate-500">Bandingkan subkriteria secara berpasangan terhadap kriteria induk</p>
-      </div>
-
-      {/* Progress Dots */}
-      <div className="flex justify-center gap-1.5 mb-6">
-        {CRITERIA.map((c, idx) => {
-          const isActive = idx === currentCritIdx;
-          const complete = generatePairwiseCombinations(SUBCRITERIA.filter(s => s.parent === c.code))
-            .every(p => !!answers.subcriteria?.[`${p.left.code}-${p.right.code}`]?.selected);
-          
-          return (
-            <button
-              key={c.code}
-              onClick={() => {
-                // Only allow navigating backwards or to answered tabs
-                if (idx < currentCritIdx || complete) {
-                  setCurrentCritIdx(idx);
-                }
-              }}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition duration-150 cursor-pointer ${
-                isActive
-                  ? 'bg-blue-900 text-white ring-2 ring-blue-900/10'
-                  : complete
-                  ? 'bg-green-100 text-green-800 hover:bg-green-150'
-                  : 'bg-slate-100 text-slate-400'
-              }`}
-            >
-              {c.code}
-            </button>
-          );
-        })}
-      </div>
-
-      {/* Induk Kriteria Info */}
-      <div className="bg-slate-50 border border-slate-200/60 rounded-xl p-4 mb-6">
-        <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Kriteria Induk ({currentCritIdx + 1} dari 6)</div>
-        <div className="font-extrabold text-slate-800 text-sm mt-0.5">
-          {currentCriterion.code} - {currentCriterion.name}
-        </div>
-        <div className="text-slate-500 text-xs mt-1 leading-relaxed">
-          {currentCriterion.description}
-        </div>
-      </div>
-
-      {/* Display the 3 Pairwise Rows */}
-      <div className="space-y-4">
-        {subPairs.map((pair, index) => {
-          const key = `${pair.left.code}-${pair.right.code}`;
-          return (
-            <PairwiseRow
-              key={key}
-              leftItem={pair.left}
-              rightItem={pair.right}
-              value={answers.subcriteria?.[key]}
-              onChange={(val) => handleRowChange(key, val)}
-              index={index}
-              total={subPairs.length}
-            />
-          );
-        })}
-      </div>
-
-      {/* Consistency warning */}
-      {warnings && (
-        <div className="bg-amber-50 border border-amber-250 rounded-xl p-4 mb-6 flex gap-2.5 text-xs md:text-sm text-amber-800 animate-fadeIn">
-          <AlertTriangle className="w-5 h-5 shrink-0 text-amber-600 mt-0.5" />
-          <div>{warnings}</div>
-        </div>
-      )}
-
-      {/* Navigation Buttons */}
-      <div className="flex justify-between items-center mt-6">
-        <button
-          onClick={handlePrev}
-          className="px-5 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition duration-150"
-        >
-          Kembali
-        </button>
-        <button
-          onClick={handleNext}
-          disabled={!validateAllAnswered()}
-          className={`px-6 py-3 font-semibold rounded-xl shadow-sm transition duration-150 flex items-center gap-1 ${
-            validateAllAnswered()
-              ? 'bg-blue-900 hover:bg-blue-950 text-white cursor-pointer'
-              : 'bg-slate-200 text-slate-400 cursor-not-allowed'
-          }`}
-        >
-          {currentCritIdx === CRITERIA.length - 1 ? 'Simpan & Lanjut' : 'Lanjut'}
-          <ChevronRight className="w-4 h-4" />
-        </button>
-      </div>
-    </div>
-  );
-}
-
-// 3. ALTERNATIVES PAIRWISE STEP (Grouped: 18 screens of 6 comparisons each)
-export function PairwiseAlternativesStep({ onNext, onPrev, answers, setAnswers }) {
-  const [currentSubIdx, setCurrentSubIdx] = useState(0);
-  const [warnings, setWarnings] = useState('');
-
-  const currentSub = SUBCRITERIA[currentSubIdx];
-  const altPairs = generatePairwiseCombinations(ALTERNATIVES);
-
-  // Get parent criteria for styling/context
-  const parentCriterion = CRITERIA.find(c => c.code === currentSub.parent);
-
-  const getAnswersKeyPrefix = (subCode) => {
-    return `alt-${subCode}`;
-  };
-
-  // Evaluate Consistency for current subcriteria
-  const checkConsistency = () => {
-    const altCodes = ALTERNATIVES.map(a => a.code);
-    const subAnswers = {};
-    altPairs.forEach(p => {
-      const answerKey = `${getAnswersKeyPrefix(currentSub.code)}-${p.left.code}-${p.right.code}`;
-      const ans = answers.alternatives?.[answerKey];
-      if (ans) {
-        // Map to key format required by evaluateAHPSection (which expects 'left-right')
-        subAnswers[`${p.left.code}-${p.right.code}`] = ans;
-      }
-    });
-
-    const result = evaluateAHPSection(altCodes, subAnswers);
-    if (result.cr > 0.10) {
-      setWarnings(`Consistency Ratio (CR) = ${result.cr}. Pilihan Anda pada subkriteria ${currentSub.code} tidak konsisten (CR > 0.10). Kami menyarankan untuk meninjau kembali pilihan Anda agar konsisten.`);
-    } else {
-      setWarnings('');
-    }
-  };
-
-  useEffect(() => {
-    checkConsistency();
-  }, [answers.alternatives, currentSubIdx]);
-
-  const handleRowChange = (key, val) => {
-    setAnswers(prev => ({
-      ...prev,
-      alternatives: {
-        ...prev.alternatives,
-        [key]: val
-      }
-    }));
-  };
-
-  const validateAllAnswered = () => {
-    return altPairs.every(p => {
-      const key = `${getAnswersKeyPrefix(currentSub.code)}-${p.left.code}-${p.right.code}`;
-      return !!answers.alternatives?.[key]?.selected;
-    });
-  };
-
-  const handleNext = () => {
-    if (!validateAllAnswered()) {
-      alert('Mohon isi semua perbandingan sebelum melanjutkan.');
-      return;
-    }
-
-    if (currentSubIdx < SUBCRITERIA.length - 1) {
-      setCurrentSubIdx(currentSubIdx + 1);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    } else {
-      onNext();
-    }
-  };
-
-  const handlePrev = () => {
-    if (currentSubIdx > 0) {
-      setCurrentSubIdx(currentSubIdx - 1);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    } else {
-      onPrev();
-    }
-  };
-
   const handleJump = (idx) => {
-    // Only allow jump if preceding subcriteria is fully answered
     let canJump = true;
     for (let i = 0; i < idx; i++) {
-      const s = SUBCRITERIA[i];
-      const answered = generatePairwiseCombinations(ALTERNATIVES).every(
-        p => !!answers.alternatives?.[`${getAnswersKeyPrefix(s.code)}-${p.left.code}-${p.right.code}`]?.selected
+      const c = CRITERIA[i];
+      const answered = altPairs.every(
+        p => !!answers.alternatives?.[`${getAnswersKeyPrefix(c.code)}-${p.left.code}-${p.right.code}`]?.selected
       );
       if (!answered) {
         canJump = false;
         break;
       }
     }
-    if (canJump || idx < currentSubIdx) {
-      setCurrentSubIdx(idx);
+    if (canJump || idx < currentCritIdx) {
+      setCurrentCritIdx(idx);
     }
   };
+
+  const answeredCount = altPairs.filter(p => !!answers.alternatives?.[`${getAnswersKeyPrefix(currentCriterion.code)}-${p.left.code}-${p.right.code}`]?.selected).length;
 
   return (
     <div className="max-w-3xl mx-auto py-8 px-4">
       <div className="text-center mb-6">
-        <h2 className="text-2xl font-bold text-slate-900 mb-1">Perbandingan Berpasangan: Alternatif Stack</h2>
-        <p className="text-slate-500">Bandingkan ke-4 alternatif stack terhadap subkriteria di bawah ini</p>
+        <h2 className="text-2xl font-bold text-slate-900 mb-1">Perbandingan Berpasangan Antaralternatif</h2>
+        <p className="text-slate-500">Nilai kesesuaian dua alternatif terhadap kriteria yang sedang aktif.</p>
       </div>
 
-      {/* Progress Matrix Dropdown or Tiny Grid for Desktop */}
+      {/* Criteria Tabs */}
       <div className="mb-6">
         <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 text-center">
-          Pilih Subkriteria ({currentSubIdx + 1} dari 18)
+          Kriteria ({currentCritIdx + 1} dari {CRITERIA.length})
         </label>
-        <div className="grid grid-cols-6 sm:grid-cols-9 gap-1.5 justify-center max-w-xl mx-auto">
-          {SUBCRITERIA.map((s, idx) => {
-            const isActive = idx === currentSubIdx;
-            const complete = generatePairwiseCombinations(ALTERNATIVES).every(
-              p => !!answers.alternatives?.[`${getAnswersKeyPrefix(s.code)}-${p.left.code}-${p.right.code}`]?.selected
+        <div className="flex justify-center gap-1.5">
+          {CRITERIA.map((c, idx) => {
+            const isActive = idx === currentCritIdx;
+            const complete = altPairs.every(
+              p => !!answers.alternatives?.[`${getAnswersKeyPrefix(c.code)}-${p.left.code}-${p.right.code}`]?.selected
             );
-            
+
             return (
               <button
-                key={s.code}
+                key={c.code}
                 type="button"
                 onClick={() => handleJump(idx)}
-                className={`py-1.5 rounded text-[10px] font-bold transition duration-150 cursor-pointer ${
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition duration-150 cursor-pointer ${
                   isActive
-                    ? 'bg-blue-900 text-white shadow-sm ring-2 ring-blue-900/10'
+                    ? 'bg-blue-900 text-white ring-2 ring-blue-900/10'
                     : complete
                     ? 'bg-green-100 text-green-800 hover:bg-green-150'
-                    : 'bg-slate-100 text-slate-400 hover:bg-slate-200'
+                    : 'bg-slate-100 text-slate-400'
                 }`}
               >
-                {s.code}
+                {c.code}
               </button>
             );
           })}
         </div>
       </div>
 
-      {/* Subcriteria & Parent Criteria Info */}
+      {/* Criteria Info */}
       <div className="bg-slate-50 border border-slate-200/60 rounded-xl p-4 mb-6">
-        <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-          Kriteria Induk: {parentCriterion?.code} - {parentCriterion?.name}
-        </div>
-        <div className="text-xs text-slate-500 mt-0.5 mb-2.5 pb-2.5 border-b border-slate-200/60">
-          {parentCriterion?.description}
-        </div>
         <div className="text-[10px] font-bold text-blue-950 uppercase tracking-wider">
-          Subkriteria Aktif:
-        </div>
-        <div className="font-extrabold text-slate-800 text-sm mt-0.5">
-          {currentSub.code} - {currentSub.name}
+          Kriteria Aktif: {currentCriterion.code} — {currentCriterion.name}
         </div>
         <div className="text-slate-600 text-xs mt-1 leading-relaxed">
-          {currentSub.description}
+          {currentCriterion.description}
+        </div>
+        <div className="text-[11px] text-slate-400 mt-2 font-semibold">
+          {answeredCount} dari {altPairs.length} perbandingan pada {currentCriterion.code}
         </div>
       </div>
 
       {/* Render 6 comparisons of 4 alternatives */}
       <div className="space-y-4">
         {altPairs.map((pair, index) => {
-          const key = `${getAnswersKeyPrefix(currentSub.code)}-${pair.left.code}-${pair.right.code}`;
+          const key = `${getAnswersKeyPrefix(currentCriterion.code)}-${pair.left.code}-${pair.right.code}`;
           return (
             <PairwiseRow
               key={key}
@@ -649,7 +474,7 @@ export function PairwiseAlternativesStep({ onNext, onPrev, answers, setAnswers }
               : 'bg-slate-200 text-slate-400 cursor-not-allowed'
           }`}
         >
-          {currentSubIdx === SUBCRITERIA.length - 1 ? 'Simpan & Lanjut' : 'Lanjut'}
+          {currentCritIdx === CRITERIA.length - 1 ? 'Simpan & Lanjut' : 'Lanjut'}
           <ChevronRight className="w-4 h-4" />
         </button>
       </div>

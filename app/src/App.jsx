@@ -1,20 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { Layers, CheckCircle2, ChevronRight, Save, Trash2, ArrowLeft, RefreshCw, AlertCircle } from 'lucide-react';
+import { Layers, CheckCircle2 } from 'lucide-react';
 
 // Import components
 import LandingStep from './components/LandingStep';
+import StackExplanationStep from './components/StackExplanationStep';
 import ConsentStep from './components/ConsentStep';
 import ProfileStep from './components/ProfileStep';
-import AhpGuideStep from './components/AhpGuideStep';
-import { CriteriaValidationStep, SubcriteriaValidationStep, AlternativesValidationStep } from './components/ValidationSteps';
-import { PairwiseCriteriaStep, PairwiseSubcriteriaStep, PairwiseAlternativesStep } from './components/PairwiseSteps';
-import OpenQuestionsStep from './components/OpenQuestionsStep';
-import ReviewStep from './components/ReviewStep';
-import SuccessStep from './components/SuccessStep';
+import AhpStructureStep from './components/AhpStructureStep';
+import ScaleGuideStep from './components/ScaleGuideStep';
+import { PairwiseCriteriaStep, PairwiseAlternativesStep } from './components/PairwiseSteps';
+import ConsistencyCheckStep from './components/ConsistencyCheckStep';
+import FinalStep from './components/FinalStep';
 
-// AHP data and helper
-import { CRITERIA, SUBCRITERIA, ALTERNATIVES } from './data/constants';
-import { generatePairwiseCombinations } from './utils/ahp';
 import { submitToGoogleSheets } from './utils/googleSheets';
 
 // STORAGE KEY
@@ -22,49 +19,42 @@ const LOCAL_STORAGE_KEY = 'ahp_eaudit_survey_state';
 
 // PLACEHOLDER GOOGLE SHEETS WEB APP URL
 // Ganti nilai di bawah ini dengan URL hasil deployment Google Apps Script Anda
-const GOOGLE_SHEET_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbwzwJcPVPUxLkVULU_R7uzFNNVVzA4ews24LYtRs_GfgX8aqG54m12EHcwU3c0m-gbgpw/exec";
+const GOOGLE_SHEET_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbwC5LV2bzuVV_z-K-R5a24ealz5kjADfOLMFuaOtE5cQRicslmc16S6OnsBpuEgRB8O/exec";
+
+// 10-step wizard sesuai mockup terbaru
+const STEPS = [
+  { id: 'landing', label: 'Pengantar' },
+  { id: 'stack_explanation', label: 'Penjelasan Stack' },
+  { id: 'consent', label: 'Persetujuan' },
+  { id: 'profile', label: 'Profil Responden' },
+  { id: 'ahp_structure', label: 'Struktur AHP' },
+  { id: 'scale_guide', label: 'Panduan Skala' },
+  { id: 'pw_criteria', label: 'Perbandingan Kriteria' },
+  { id: 'pw_alternatives', label: 'Perbandingan Alternatif' },
+  { id: 'consistency_check', label: 'Cek Konsistensi' },
+  { id: 'final', label: 'Selesai' }
+];
+
+const STEP_INDEX = STEPS.reduce((acc, s, idx) => ({ ...acc, [s.id]: idx }), {});
 
 export default function App() {
   // 1. STATE INITIALIZATION
   const [step, setStep] = useState(0);
   const [profile, setProfile] = useState({});
   const [consentChecked, setConsentChecked] = useState(false);
-  const [validationAnswers, setValidationAnswers] = useState({
-    criteria: {},
-    subcriteria: {},
-    alternatives: {}
-  });
   const [answers, setAnswers] = useState({
     criteria: {},
-    subcriteria: {},
     alternatives: {}
   });
-  const [openAnswers, setOpenAnswers] = useState({});
   const [submissionId, setSubmissionId] = useState('');
   const [hasSavedData, setHasSavedData] = useState(false);
-  
+
   // Submit state
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
+  const [submitResult, setSubmitResult] = useState(null);
 
-  // 2. WIZARD STEPS DEFINITION
-  const STEPS = [
-    { id: 'landing', label: 'Mulai' },
-    { id: 'consent', label: 'Persetujuan' },
-    { id: 'profile', label: 'Profil Responden' },
-    { id: 'guide', label: 'Panduan AHP' },
-    { id: 'val_criteria', label: 'Val. Kriteria' },
-    { id: 'val_subcriteria', label: 'Val. Subkriteria' },
-    { id: 'val_alternatives', label: 'Val. Alternatif' },
-    { id: 'pw_criteria', label: 'Pairwise Kriteria' },
-    { id: 'pw_subcriteria', label: 'Pairwise Subkriteria' },
-    { id: 'pw_alternatives', label: 'Pairwise Alternatif' },
-    { id: 'open_questions', label: 'Pertanyaan Terbuka' },
-    { id: 'review', label: 'Review & Submit' },
-    { id: 'success', label: 'Selesai' }
-  ];
-
-  // Generate unique submission ID
+  // Generate unique submission/response ID
   const generateSubmissionId = () => {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
     let result = 'AHP-EAUDIT-';
@@ -74,32 +64,28 @@ export default function App() {
     return result;
   };
 
-  // 3. AUTOSAVE EFFECT & LOAD
+  // 2. AUTOSAVE EFFECT & LOAD
   useEffect(() => {
-    // Check if there is saved state on mount
     const saved = localStorage.getItem(LOCAL_STORAGE_KEY);
     if (saved) {
       setHasSavedData(true);
     }
-    // Set a submission ID if none exists
     setSubmissionId(generateSubmissionId());
   }, []);
 
   // Save state on change
   useEffect(() => {
-    if (step > 0 && step < STEPS.length - 1) {
+    if (step > 0 && !submitResult) {
       const stateToSave = {
         step,
         profile,
         consentChecked,
-        validationAnswers,
         answers,
-        openAnswers,
         submissionId
       };
       localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(stateToSave));
     }
-  }, [step, profile, consentChecked, validationAnswers, answers, openAnswers, submissionId]);
+  }, [step, profile, consentChecked, answers, submissionId, submitResult]);
 
   const loadSavedState = () => {
     try {
@@ -109,9 +95,7 @@ export default function App() {
         setStep(state.step || 0);
         setProfile(state.profile || {});
         setConsentChecked(state.consentChecked || false);
-        setValidationAnswers(state.validationAnswers || { criteria: {}, subcriteria: {}, alternatives: {} });
-        setAnswers(state.answers || { criteria: {}, subcriteria: {}, alternatives: {} });
-        setOpenAnswers(state.openAnswers || {});
+        setAnswers(state.answers || { criteria: {}, alternatives: {} });
         setSubmissionId(state.submissionId || generateSubmissionId());
         setHasSavedData(false);
       }
@@ -126,12 +110,10 @@ export default function App() {
       localStorage.removeItem(LOCAL_STORAGE_KEY);
       setProfile({});
       setConsentChecked(false);
-      setValidationAnswers({ criteria: {}, subcriteria: {}, alternatives: {} });
-      setAnswers({ criteria: {}, subcriteria: {}, alternatives: {} });
-      setOpenAnswers({});
+      setAnswers({ criteria: {}, alternatives: {} });
       setSubmissionId(generateSubmissionId());
       setHasSavedData(false);
-      setStep(1); // Jump to consent
+      setStep(1);
     }
   };
 
@@ -139,38 +121,34 @@ export default function App() {
   const handleNext = () => setStep(prev => Math.min(prev + 1, STEPS.length - 1));
   const handlePrev = () => setStep(prev => Math.max(prev - 1, 0));
   const jumpToStep = (targetStep) => {
-    // Only allow jumping back, or jumping forward to steps already completed
-    if (targetStep < step || step === 11) {
+    // Only allow jumping back, or jumping forward when reviewing on the final step
+    if (targetStep < step || step === STEPS.length - 1) {
       setStep(targetStep);
     }
   };
 
-  // 4. SUBMISSION TO GOOGLE SHEETS
+  // 3. SUBMISSION TO GOOGLE SHEETS
   const handleSubmit = async (ahpResults) => {
     setIsSubmitting(true);
     setSubmitError('');
 
+    const submittedAt = new Date().toISOString();
     const submissionState = {
       submissionId,
       submissionCode: submissionId,
-      submittedAt: new Date().toISOString(),
+      submittedAt,
       profile,
       consent: consentChecked,
-      validations: validationAnswers,
-      validationAnswers,
-      validation: validationAnswers,
       pairwise: answers,
-      openQuestions: openAnswers,
     };
 
     // Jika URL masih menggunakan placeholder, ingatkan user tapi simulasikan sukses
     if (GOOGLE_SHEET_WEBAPP_URL.includes("MASUKKAN_URL_GOOGLE_APPS_SCRIPT")) {
       setTimeout(() => {
         setIsSubmitting(false);
-        // Hapus local storage karena pengisian selesai
         localStorage.removeItem(LOCAL_STORAGE_KEY);
-        setStep(12); // Pindah ke Success
-        alert("MODE SIMULASI: Data berhasil diproses lokal! (Anda melihat ini karena URL Google Apps Script belum dikonfigurasi. Anda dapat mengunduh data CSV/JSON di halaman sukses.)");
+        setSubmitResult({ responseId: submissionId, submittedAt });
+        alert("MODE SIMULASI: Data berhasil diproses lokal! (Anda melihat ini karena URL Google Apps Script belum dikonfigurasi. Anda dapat mengunduh data CSV/JSON di halaman ini.)");
       }, 1500);
       return;
     }
@@ -179,8 +157,7 @@ export default function App() {
       await submitToGoogleSheets(GOOGLE_SHEET_WEBAPP_URL, submissionState, ahpResults || {});
       setIsSubmitting(false);
       localStorage.removeItem(LOCAL_STORAGE_KEY);
-      setStep(12); // Pindah ke Success
-
+      setSubmitResult({ responseId: submissionId, submittedAt });
     } catch (err) {
       console.error("Submit Error: ", err);
       setIsSubmitting(false);
@@ -188,29 +165,22 @@ export default function App() {
     }
   };
 
-  // 5. PROGRESS & COMPLETENESS TRACKERS FOR SIDEBAR
+  // 4. PROGRESS & COMPLETENESS TRACKERS FOR SIDEBAR
   const checkStepStatus = (stepId) => {
     switch (stepId) {
       case 'landing': return true;
+      case 'stack_explanation': return true;
       case 'consent': return consentChecked;
       case 'profile':
-        return !!(profile.nama && profile.instansi && profile.jabatan && profile.keahlian?.length > 0 && profile.pengalaman && profile.pernah_e_audit && profile.pernah_tools && profile.pemahaman_ahp);
-      case 'guide': return true;
-      case 'val_criteria':
-        return CRITERIA.every(c => validationAnswers.criteria?.[c.code]?.rating);
-      case 'val_subcriteria':
-        return SUBCRITERIA.every(s => validationAnswers.subcriteria?.[s.code]?.rating);
-      case 'val_alternatives':
-        return ALTERNATIVES.every(a => validationAnswers.alternatives?.[a.code]?.rating);
+        return !!(profile.nama && profile.instansi && profile.jabatan && profile.keahlian?.length > 0 && profile.pengalaman && profile.pemahaman_ahp);
+      case 'ahp_structure': return true;
+      case 'scale_guide': return true;
       case 'pw_criteria':
-        return Object.keys(answers.criteria || {}).filter(k => answers.criteria[k]?.selected).length === 15;
-      case 'pw_subcriteria':
-        return Object.keys(answers.subcriteria || {}).filter(k => answers.subcriteria[k]?.selected).length === 18;
+        return Object.keys(answers.criteria || {}).filter(k => answers.criteria[k]?.selected).length === 10;
       case 'pw_alternatives':
-        return Object.keys(answers.alternatives || {}).filter(k => answers.alternatives[k]?.selected).length === 108;
-      case 'open_questions':
-        return true; // Optional
-      case 'review': return false;
+        return Object.keys(answers.alternatives || {}).filter(k => answers.alternatives[k]?.selected).length === 30;
+      case 'consistency_check': return true;
+      case 'final': return false;
       default: return false;
     }
   };
@@ -228,6 +198,8 @@ export default function App() {
           />
         );
       case 1:
+        return <StackExplanationStep onNext={handleNext} onPrev={handlePrev} />;
+      case 2:
         return (
           <ConsentStep
             onNext={handleNext}
@@ -236,7 +208,7 @@ export default function App() {
             setConsentChecked={setConsentChecked}
           />
         );
-      case 2:
+      case 3:
         return (
           <ProfileStep
             onNext={handleNext}
@@ -245,36 +217,11 @@ export default function App() {
             setProfile={setProfile}
           />
         );
-      case 3:
-        return <AhpGuideStep onNext={handleNext} onPrev={handlePrev} />;
       case 4:
-        return (
-          <CriteriaValidationStep
-            onNext={handleNext}
-            onPrev={handlePrev}
-            validationAnswers={validationAnswers}
-            setValidationAnswers={setValidationAnswers}
-          />
-        );
+        return <AhpStructureStep onNext={handleNext} onPrev={handlePrev} />;
       case 5:
-        return (
-          <SubcriteriaValidationStep
-            onNext={handleNext}
-            onPrev={handlePrev}
-            validationAnswers={validationAnswers}
-            setValidationAnswers={setValidationAnswers}
-          />
-        );
+        return <ScaleGuideStep onNext={handleNext} onPrev={handlePrev} />;
       case 6:
-        return (
-          <AlternativesValidationStep
-            onNext={handleNext}
-            onPrev={handlePrev}
-            validationAnswers={validationAnswers}
-            setValidationAnswers={setValidationAnswers}
-          />
-        );
-      case 7:
         return (
           <PairwiseCriteriaStep
             onNext={handleNext}
@@ -283,16 +230,7 @@ export default function App() {
             setAnswers={setAnswers}
           />
         );
-      case 8:
-        return (
-          <PairwiseSubcriteriaStep
-            onNext={handleNext}
-            onPrev={handlePrev}
-            answers={answers}
-            setAnswers={setAnswers}
-          />
-        );
-      case 9:
+      case 7:
         return (
           <PairwiseAlternativesStep
             onNext={handleNext}
@@ -301,37 +239,31 @@ export default function App() {
             setAnswers={setAnswers}
           />
         );
-      case 10:
+      case 8:
         return (
-          <OpenQuestionsStep
+          <ConsistencyCheckStep
             onNext={handleNext}
             onPrev={handlePrev}
-            openAnswers={openAnswers}
-            setOpenAnswers={setOpenAnswers}
+            answers={answers}
+            jumpToStep={jumpToStep}
+            pwCriteriaStepIndex={STEP_INDEX.pw_criteria}
+            pwAlternativesStepIndex={STEP_INDEX.pw_alternatives}
           />
         );
-      case 11:
+      case 9:
         return (
-          <ReviewStep
+          <FinalStep
             onPrev={handlePrev}
             profile={profile}
-            validationAnswers={validationAnswers}
             answers={answers}
-            openAnswers={openAnswers}
             onSubmit={handleSubmit}
             isSubmitting={isSubmitting}
             submitError={submitError}
+            submitResult={submitResult}
             jumpToStep={jumpToStep}
-          />
-        );
-      case 12:
-        return (
-          <SuccessStep
-            profile={profile}
-            validationAnswers={validationAnswers}
-            answers={answers}
-            openAnswers={openAnswers}
-            submissionId={submissionId}
+            profileStepIndex={STEP_INDEX.profile}
+            criteriaStepIndex={STEP_INDEX.pw_criteria}
+            alternativesStepIndex={STEP_INDEX.pw_alternatives}
           />
         );
       default:
@@ -342,9 +274,10 @@ export default function App() {
   // Calculate global progress percentage
   const calculateProgress = () => {
     if (step === 0) return 0;
-    if (step === STEPS.length - 1) return 100;
-    return Math.round((step / (STEPS.length - 2)) * 100);
+    return Math.round((step / (STEPS.length - 1)) * 100);
   };
+
+  const showChrome = step > 0;
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col">
@@ -354,10 +287,10 @@ export default function App() {
           <div className="flex items-center gap-2">
             <Layers className="w-5 h-5 text-blue-200" />
             <span className="font-extrabold text-sm md:text-base tracking-wide uppercase">
-              e-Audit AHP Decision Stack
+              e-Audit Stack AHP Survey
             </span>
           </div>
-          {step > 0 && step < STEPS.length - 1 && (
+          {showChrome && (
             <div className="flex items-center gap-2 text-[10px] md:text-xs bg-blue-900/60 px-3 py-1 rounded-full text-blue-200">
               <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
               Autosave Aktif
@@ -369,29 +302,29 @@ export default function App() {
       {/* MAIN CONTAINER */}
       <div className="flex-1 flex flex-col md:flex-row max-w-7xl mx-auto w-full">
         {/* SIDEBAR ON DESKTOP */}
-        {step > 0 && step < STEPS.length - 1 && (
+        {showChrome && (
           <aside className="w-full md:w-64 bg-white border-r border-slate-200 p-5 md:sticky md:top-16 md:h-[calc(100vh-4rem)] overflow-y-auto shrink-0 hidden md:block">
             <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">
-              Tahapan Kuesioner
+              Langkah Kuesioner
             </h3>
             <nav className="space-y-1.5">
               {STEPS.map((s, idx) => {
-                if (idx === 0 || idx === STEPS.length - 1) return null; // Skip landing and success
+                if (idx === 0) return null; // Skip landing
                 const isActive = step === idx;
                 const isComplete = checkStepStatus(s.id);
-                
+
                 return (
                   <button
                     key={s.id}
                     onClick={() => jumpToStep(idx)}
-                    disabled={step !== 11 && idx > step} // Disable forward navigation unless reviewing
+                    disabled={step !== STEPS.length - 1 && idx > step}
                     className={`w-full flex items-center justify-between p-2.5 rounded-xl text-left text-xs font-semibold transition-all ${
                       isActive
                         ? 'bg-blue-900 text-white shadow-sm font-bold'
                         : isComplete
                         ? 'text-slate-800 hover:bg-slate-100'
                         : 'text-slate-400 hover:bg-slate-50'
-                    } ${idx > step && step !== 11 ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                    } ${idx > step && step !== STEPS.length - 1 ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
                   >
                     <span className="truncate">{idx}. {s.label}</span>
                     {isComplete && (
@@ -407,7 +340,7 @@ export default function App() {
         {/* CONTENT AREA */}
         <main className="flex-1 p-4 md:p-8 flex flex-col">
           {/* Progress bar at the top of content */}
-          {step > 0 && step < STEPS.length - 1 && (
+          {showChrome && (
             <div className="mb-6 max-w-3xl mx-auto w-full">
               <div className="flex justify-between text-[11px] text-slate-400 font-bold uppercase tracking-wider mb-1.5">
                 <span>Progress Pengisian</span>
