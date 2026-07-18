@@ -14,7 +14,7 @@ export default function LandingStep({ onNext, hasSavedData, onLoadSaved, onClear
           Pemilihan Data Analytics Stack untuk e-Audit dalam Pemeriksaan Pajak
         </h1>
         <p className="text-lg text-slate-600 max-w-2xl mx-auto">
-          Penelitian ini menghimpun penilaian pakar untuk menentukan konfigurasi <strong>data analytics stack</strong> yang paling sesuai bagi pelaksanaan e-Audit dalam pemeriksaan pajak.
+          Kuesioner Penilaian Pakar dan Praktisi berbasis <strong>Analytic Hierarchy Process (AHP)</strong>
         </p>
       </div>
 
@@ -42,25 +42,51 @@ export default function LandingStep({ onNext, hasSavedData, onLoadSaved, onClear
         </h2>
         <div className="prose text-slate-600 leading-relaxed text-sm md:text-base space-y-4">
           <p>
-            Selamat datang. Kuesioner ini merupakan bagian dari penelitian berjudul <strong>"Pemilihan Data Analytics Stack untuk e-Audit dalam Pemeriksaan Pajak: Pendekatan Analytic Hierarchy Process."</strong>
+            Yth. Bapak/Ibu Responden,
           </p>
           <p>
-            Penelitian ini berangkat dari kebutuhan pemeriksaan pajak yang semakin banyak menggunakan data elektronik. Dalam praktik <strong>e-Audit</strong>, pemeriksa tidak hanya perlu memperoleh data dari Wajib Pajak, tetapi juga menyiapkan dan mengelola data agar dapat dianalisis, menjalankan pengujian audit dan data mining, menyajikan hasil analisis, serta mempertimbangkan kelayakan operasional dari seluruh konfigurasi yang digunakan.
+            Perkembangan sistem informasi, pembukuan elektronik, dan transaksi digital membuat pemeriksaan pajak semakin bergantung pada kemampuan memperoleh, mengolah, menganalisis, dan mendokumentasikan data elektronik. Kebutuhan tersebut sejalan dengan SE-25/PJ/2013 tentang Pedoman e-Audit dan SE-10/PJ/2017 mengenai pelaksanaan pemeriksaan, yang menempatkan data elektronik sebagai bagian penting dalam proses pemeriksaan pajak.
           </p>
           <p>
-            Fokus penelitian ini bukan memilih satu aplikasi audit tertentu, melainkan menilai <strong>konfigurasi data analytics stack</strong> yang bekerja secara terpadu untuk memperoleh, menyiapkan, menyimpan, menguji, menambang, memvisualisasikan, dan melaporkan data elektronik dalam pemeriksaan pajak.
+            Penelitian ini tidak berfokus pada pemilihan satu aplikasi audit tertentu. Objek yang dinilai adalah <strong>data analytics stack</strong>, yaitu konfigurasi perangkat dan prosedur yang bekerja secara terpadu untuk mendukung alur e-Audit secara menyeluruh, mulai dari pengambilan dan penyiapan data, analisis dan pengujian audit, analitik lanjutan, visualisasi dan pelaporan, hingga tata kelola, keamanan, dan dukungan operasional.
           </p>
           <p>
-            Bapak/Ibu diundang sebagai responden karena memiliki pengalaman atau pemahaman yang relevan dengan pemeriksaan pajak, e-Audit, atau data analytics. Kuesioner ini menggunakan metode <strong>Analytic Hierarchy Process (AHP)</strong>: Bapak/Ibu akan diminta melakukan perbandingan berpasangan untuk menentukan kriteria dan alternatif stack mana yang lebih penting atau lebih sesuai berdasarkan pertimbangan profesional.
+            Melalui metode <strong>AHP</strong>, penelitian ini bertujuan menentukan konfigurasi data analytics stack yang paling sesuai untuk mendukung e-Audit dalam pemeriksaan pajak. Penilaian dilakukan berdasarkan enam kriteria utama berikut:
+          </p>
+          <ol className="list-decimal pl-5 space-y-3">
+            <li>
+              <strong className="text-slate-800">Data Connectivity and Ingestion</strong> — Kemampuan mengakses dan mengambil data dari berbagai jenis file, database, aplikasi, Application Programming Interface (API), Enterprise Resource Planning (ERP), dan sumber digital lainnya secara mudah dan andal.
+            </li>
+            <li>
+              <strong className="text-slate-800">Data Preparation and Management</strong> — Kemampuan membersihkan, mengubah, menggabungkan, memvalidasi, menyimpan, dan mengelola data agar siap digunakan dalam analisis audit.
+            </li>
+            <li>
+              <strong className="text-slate-800">Audit Analytics and Testing Capability</strong> — Kemampuan menjalankan analisis dan pengujian audit, seperti profiling, rekonsiliasi, sampling, deteksi duplikasi, anomali, dan pola risiko.
+            </li>
+            <li>
+              <strong className="text-slate-800">Advanced Analytics Capability</strong> — Kemampuan mendukung analitik lanjutan, termasuk analisis teks, machine learning, pemodelan, dan pengembangan teknik analisis baru.
+            </li>
+            <li>
+              <strong className="text-slate-800">Reporting and Audit Communication</strong> — Kemampuan menyajikan hasil analisis dalam bentuk laporan, tabel, grafik, atau dashboard yang jelas dan mendukung tindak lanjut pemeriksaan.
+            </li>
+            <li>
+              <strong className="text-slate-800">Governance, Security, and Operational Feasibility</strong> — Kemampuan menjaga kualitas, keamanan, integritas, dan keterlacakan data, sekaligus memastikan stack mudah digunakan, terjangkau, dan dapat didukung secara operasional.
+            </li>
+          </ol>
+          <p>
+            Berdasarkan kriteria tersebut, Bapak/Ibu akan membandingkan empat alternatif konfigurasi, yaitu <em>spreadsheet-centric lightweight stack</em>, <em>low-code analytics stack</em>, <em>script-assisted open analytics stack</em>, dan <em>reporting-oriented hybrid stack</em>. Keempat alternatif tersebut bukan pilihan terhadap satu merek atau produk tertentu, melainkan representasi kombinasi teknologi dengan tingkat kemampuan, kemudahan penggunaan, biaya, fleksibilitas, dan kebutuhan dukungan yang berbeda.
           </p>
           <p>
-            Hasil jawaban akan diolah secara agregat untuk menghasilkan bobot prioritas kriteria dan peringkat alternatif data analytics stack. Tidak ada jawaban benar atau salah — yang diperlukan adalah penilaian yang konsisten dan sesuai dengan pengalaman profesional Bapak/Ibu.
-          </p>
-           <p>
-            Terima kasih atas perkenan Bapak/Ibu untuk mengisi kuesioner penelitian. Semoga Tuhan Yang Maha Kuasa selalu memberikan keberlimpahan kepada kita semua.
+            Penilaian Bapak/Ibu akan digunakan untuk menentukan bobot prioritas kriteria, subkriteria, dan alternatif secara sistematis. Hasil penelitian diharapkan dapat menjadi kerangka rujukan operasional bagi pengembangan e-Audit berbasis analitika data yang efektif, terintegrasi, aman, dan realistis untuk diterapkan dalam pemeriksaan pajak.
           </p>
           <p>
-            Salam hormat,
+            Bapak/Ibu dipersilakan memberikan penilaian berdasarkan pengalaman, pengetahuan, dan pertimbangan profesional. Tidak terdapat jawaban benar atau salah. Jawaban digunakan untuk kepentingan akademik dan disajikan secara agregat, sehingga identitas serta penilaian individual responden tidak ditampilkan secara terbuka.
+          </p>
+          <p>
+            Terima kasih atas waktu, kesediaan, dan kontribusi Bapak/Ibu. Pengalaman dan pertimbangan profesional Bapak/Ibu sangat berarti bagi kualitas dan relevansi penelitian ini.
+          </p>
+          <p>
+            Hormat saya,
           </p>
           <p>
             Agung Darono
