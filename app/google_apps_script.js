@@ -1,202 +1,213 @@
 /**
- * GOOGLE APPS SCRIPT FOR AHP E-AUDIT QUESTIONNAIRE BACKEND (VERSI OPTIMAL / BATCH WRITE)
+ * Backend Google Apps Script — Kuesioner AHP e-Audit.
  *
- * Struktur kuesioner: 5 kriteria (K1-K5), 4 alternatif (A1-A4).
- * 10 perbandingan antarkriteria + 30 perbandingan antaralternatif (6 x 5 kriteria) = 40 total.
+ * Worksheet dibuat otomatis:
+ * RESPONSES    profil, metadata, dan hasil akhir
+ * CRITERIA     10 perbandingan antarkriteria
+ * ALTERNATIVES 30 perbandingan alternatif
+ * LOG          jejak saveDraft, submitFinal, dan error
  *
- * PETUNJUK INSTALASI:
- * 1. Buka Google Sheets Anda, klik Ekstensi > Apps Script.
- * 2. Hapus semua kode lama, lalu paste kode baru di bawah ini.
- * 3. Simpan.
- * 4. Klik Terapkan (Deploy) > Kelola Penerapan (Manage deployments) > Edit (pensil) > Pilih versi baru (New Version) > klik Terapkan.
+ * Deploy sebagai Web App: Execute as Me, Who has access: Anyone.
  */
 
+function doGet() {
+  return jsonResponse({ ok: true, status: 'success', message: 'Backend AHP e-Audit aktif.' });
+}
+
 function doPost(e) {
+  var spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
+  var data;
+
   try {
-    var rawData = e.postData.contents;
-    var data = JSON.parse(rawData);
+    data = JSON.parse(e.postData.contents || '{}');
+    validatePayload(data);
+    initializeSheets(spreadsheet);
 
-    var spreadSheet = SpreadsheetApp.getActiveSpreadsheet();
+    var action = data.action || 'submitFinal';
+    upsertResponse(spreadsheet.getSheetByName('RESPONSES'), data);
+    replacePairwiseRows(spreadsheet.getSheetByName('CRITERIA'), data.response_id, data.criteria || [], false);
+    replacePairwiseRows(spreadsheet.getSheetByName('ALTERNATIVES'), data.response_id, data.alternatives || [], true);
+    appendLog(spreadsheet, data.response_id, action, 'success', 'Data berhasil disimpan.');
 
-    // Inisialisasi/dapatkan sheet rekap & raw
-    var sheetRekap = getOrCreateSheet(spreadSheet, "Responden_Rekap");
-    var sheetRaw = getOrCreateSheet(spreadSheet, "Pairwise_Raw");
-
-    // Tulis header jika sheet baru dibuat
-    initializeSheetHeaders(sheetRekap, "rekap");
-    initializeSheetHeaders(sheetRaw, "raw");
-
-    var timestamp = new Date().toISOString();
-
-    // 1. TULIS DATA REKAP (1 Baris)
-    writeRekapRow(sheetRekap, data, timestamp);
-
-    // 2. TULIS DATA PAIRWISE RAW (Batch Write - Sangat Cepat!)
-    writeRawRowsOptimized(sheetRaw, data, timestamp);
-
-    return ContentService.createTextOutput(JSON.stringify({
-      status: "success",
-      message: "Data kuesioner berhasil disimpan.",
-      submissionId: data.submissionId
-    }))
-    .setMimeType(ContentService.MimeType.JSON);
-
+    return jsonResponse({
+      ok: true,
+      status: 'success',
+      action: action,
+      response_id: data.response_id,
+      message: action === 'saveDraft' ? 'Draf berhasil disimpan.' : 'Jawaban akhir berhasil disimpan.'
+    });
   } catch (error) {
-    return ContentService.createTextOutput(JSON.stringify({
-      status: "error",
-      message: error.toString()
-    }))
-    .setMimeType(ContentService.MimeType.JSON);
+    try {
+      initializeSheets(spreadsheet);
+      appendLog(spreadsheet, data && data.response_id ? data.response_id : '', data && data.action ? data.action : '', 'error', String(error));
+    } catch (ignored) {
+      // Respons error tetap dikembalikan walaupun pencatatan log gagal.
+    }
+    return jsonResponse({ ok: false, status: 'error', message: String(error) });
   }
 }
 
-// GET untuk tes koneksi
-function doGet(e) {
-  return ContentService.createTextOutput(JSON.stringify({
-    status: "success",
-    message: "Koneksi backend kuesioner AHP e-Audit aktif."
-  }))
-  .setMimeType(ContentService.MimeType.JSON);
+function validatePayload(data) {
+  if (!data.response_id) throw new Error('response_id wajib diisi.');
+  if (['saveDraft', 'submitFinal'].indexOf(data.action || 'submitFinal') === -1) {
+    throw new Error('action tidak valid.');
+  }
+  if (!data.profile || typeof data.profile !== 'object') throw new Error('profile tidak valid.');
 }
 
-function getOrCreateSheet(spreadSheet, name) {
-  var sheet = spreadSheet.getSheetByName(name);
-  if (!sheet) {
-    sheet = spreadSheet.insertSheet(name);
+function initializeSheets(spreadsheet) {
+  ensureSheet(spreadsheet, 'RESPONSES', [
+    'response_id', 'timestamp', 'action', 'nama', 'instansi', 'jabatan',
+    'pengalaman', 'bidang', 'pemahaman_ahp', 'tools', 'consent',
+    'cr_kriteria', 'cr_k1', 'cr_k2', 'cr_k3', 'cr_k4', 'cr_k5',
+    'weight_a1', 'weight_a2', 'weight_a3', 'weight_a4'
+  ]);
+  ensureSheet(spreadsheet, 'CRITERIA', [
+    'response_id', 'pair_code', 'left_code', 'right_code',
+    'score', 'chosen_side', 'ahp_value', 'note', 'created_at'
+  ]);
+  ensureSheet(spreadsheet, 'ALTERNATIVES', [
+    'response_id', 'criterion_code', 'pair_code', 'left_alt', 'right_alt',
+    'score', 'chosen_side', 'ahp_value', 'note', 'created_at'
+  ]);
+  ensureSheet(spreadsheet, 'LOG', [
+    'response_id', 'timestamp', 'action', 'status', 'message'
+  ]);
+}
+
+function ensureSheet(spreadsheet, name, headers) {
+  var sheet = spreadsheet.getSheetByName(name) || spreadsheet.insertSheet(name);
+  if (sheet.getLastRow() === 0) {
+    sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
+    sheet.getRange(1, 1, 1, headers.length).setFontWeight('bold').setBackground('#dbeafe');
+    sheet.setFrozenRows(1);
   }
   return sheet;
 }
 
-function initializeSheetHeaders(sheet, type) {
-  if (sheet.getLastRow() > 0) return; // Sudah ada header
-
-  var headers = [];
-  if (type === "raw") {
-    headers = [
-      "Timestamp", "Submission_ID", "Nama_Responden", "Instansi",
-      "Kategori_Pairwise", "Kriteria_Terkait", "Item_Kiri", "Item_Kanan",
-      "Pilihan_Responden", "Intensitas", "Nilai_AHP", "Alasan"
-    ];
-  } else if (type === "rekap") {
-    headers = [
-      "Timestamp", "Submission_ID", "Nama_Responden", "Instansi", "Jabatan",
-      "Bidang_Keahlian", "Lama_Pengalaman", "Tools_Digunakan", "Pemahaman_AHP"
-    ];
-
-    // Tambah header CR per matriks (kriteria + 5 matriks alternatif)
-    headers.push("CR_Kriteria_Utama");
-    for (var i = 1; i <= 5; i++) {
-      headers.push("CR_K" + i);
-    }
-
-    // Tambah header bobot prioritas global alternatif (A1-A4)
-    var altCodes = ["A1", "A2", "A3", "A4"];
-    altCodes.forEach(function(code) {
-      headers.push("Weight_" + code);
-    });
-  }
-
-  sheet.appendRow(headers);
-  sheet.getRange(1, 1, 1, headers.length).setFontWeight("bold").setBackground("#e2e8f0");
-}
-
-function writeRekapRow(sheet, data, timestamp) {
-  var p = data.profile || {};
+function upsertResponse(sheet, data) {
+  var profile = data.profile || {};
   var results = data.results || {};
-
+  var perCriterion = results.perCriterion || {};
+  var globalWeights = results.globalAlternatives || {};
   var row = [
-    timestamp,
-    data.submissionId,
-    p.nama || "",
-    p.instansi || "",
-    p.jabatan || "",
-    (p.keahlian || []).join(", "),
-    p.pengalaman || "",
-    (p.tools_digunakan || []).join(", "),
-    p.pemahaman_ahp || ""
+    safeCell(data.response_id),
+    safeCell(data.timestamp || new Date().toISOString()),
+    safeCell(data.action || 'submitFinal'),
+    safeCell(profile.nama),
+    safeCell(profile.instansi),
+    safeCell(profile.jabatan),
+    safeCell(profile.pengalaman),
+    safeCell((profile.bidang || []).join(', ')),
+    safeCell(profile.pemahaman_ahp),
+    safeCell((profile.tools || []).join(', ')),
+    Boolean(data.consent),
+    numberOrBlank(results.criteria && results.criteria.cr),
+    numberOrBlank(perCriterion.K1 && perCriterion.K1.cr),
+    numberOrBlank(perCriterion.K2 && perCriterion.K2.cr),
+    numberOrBlank(perCriterion.K3 && perCriterion.K3.cr),
+    numberOrBlank(perCriterion.K4 && perCriterion.K4.cr),
+    numberOrBlank(perCriterion.K5 && perCriterion.K5.cr),
+    numberOrBlank(globalWeights.A1),
+    numberOrBlank(globalWeights.A2),
+    numberOrBlank(globalWeights.A3),
+    numberOrBlank(globalWeights.A4)
   ];
 
-  // CR Kriteria Utama
-  row.push(results.criteria && results.criteria.cr !== undefined ? results.criteria.cr : "");
-
-  // CR per kriteria (matriks alternatif K1-K5)
-  for (var i = 1; i <= 5; i++) {
-    var code = "K" + i;
-    var perCrit = results.perCriterion && results.perCriterion[code];
-    row.push(perCrit && perCrit.cr !== undefined ? perCrit.cr : "");
-  }
-
-  // Bobot prioritas global alternatif
-  var altCodes = ["A1", "A2", "A3", "A4"];
-  altCodes.forEach(function(code) {
-    row.push(results.globalAlternatives ? results.globalAlternatives[code] : "");
-  });
-
-  sheet.appendRow(row);
+  var rowNumber = findResponseRow(sheet, data.response_id);
+  if (rowNumber) sheet.getRange(rowNumber, 1, 1, row.length).setValues([row]);
+  else sheet.getRange(sheet.getLastRow() + 1, 1, 1, row.length).setValues([row]);
 }
 
-function writeRawRowsOptimized(sheet, data, timestamp) {
-  var p = data.profile || {};
-  var pw = data.pairwise || {};
+function findResponseRow(sheet, responseId) {
+  if (sheet.getLastRow() < 2) return 0;
+  var match = sheet.getRange(2, 1, sheet.getLastRow() - 1, 1)
+    .createTextFinder(String(responseId))
+    .matchEntireCell(true)
+    .findNext();
+  return match ? match.getRow() : 0;
+}
 
-  var name = p.nama || "";
-  var instansi = p.instansi || "";
-  var subId = data.submissionId;
+function replacePairwiseRows(sheet, responseId, rows, includeCriterion) {
+  deleteRowsForResponse(sheet, responseId);
+  if (!rows.length) return;
 
-  var rowsToAppend = [];
+  var values = rows.map(function(row) {
+    var common = [
+      safeCell(responseId)
+    ];
+    if (includeCriterion) common.push(safeCell(row.parentCode));
+    common.push(
+      safeCell(row.leftCode + '-' + row.rightCode),
+      safeCell(row.leftCode),
+      safeCell(row.rightCode),
+      Number(row.intensity) || 1,
+      safeCell(row.selectedSide || 'equal'),
+      Number(row.ahpValue) || 1,
+      safeCell(row.reason),
+      safeCell(row.createdAt)
+    );
+    return common;
+  });
 
-  var addRow = function(category, parent, left, right, ans) {
-    if (!ans) return;
+  sheet.getRange(sheet.getLastRow() + 1, 1, values.length, values[0].length).setValues(values);
+}
 
-    var ahpValue = 1;
-    var intensity = Number(ans.intensity) || 1;
-    if (ans.selected === "left") {
-      ahpValue = intensity;
-    } else if (ans.selected === "right") {
-      ahpValue = 1 / intensity;
+function deleteRowsForResponse(sheet, responseId) {
+  var lastRow = sheet.getLastRow();
+  if (lastRow < 2) return;
+
+  var ids = sheet.getRange(2, 1, lastRow - 1, 1).getValues();
+  var matchingRows = [];
+  for (var i = 0; i < ids.length; i++) {
+    if (String(ids[i][0]) === String(responseId)) matchingRows.push(i + 2);
+  }
+  if (!matchingRows.length) return;
+
+  // Kelompokkan nomor baris yang berurutan, lalu hapus dari bawah agar
+  // nomor baris kelompok sebelumnya tidak bergeser. Maksimal dua panggilan
+  // deleteRows untuk data normal, bukan 10–30 deleteRow terpisah.
+  var groups = [];
+  var start = matchingRows[0];
+  var previous = matchingRows[0];
+  for (var j = 1; j < matchingRows.length; j++) {
+    if (matchingRows[j] === previous + 1) {
+      previous = matchingRows[j];
+    } else {
+      groups.push({ start: start, count: previous - start + 1 });
+      start = matchingRows[j];
+      previous = matchingRows[j];
     }
-
-    rowsToAppend.push([
-      timestamp,
-      subId,
-      name,
-      instansi,
-      category,
-      parent,
-      left,
-      right,
-      ans.selected || "equal",
-      intensity,
-      ahpValue,
-      ans.reason || ""
-    ]);
-  };
-
-  // 1. Kriteria Utama (10 perbandingan)
-  if (pw.criteria) {
-    Object.keys(pw.criteria).forEach(function(key) {
-      var parts = key.split("-");
-      addRow("Kriteria Utama", "Tujuan", parts[0], parts[1], pw.criteria[key]);
-    });
   }
+  groups.push({ start: start, count: previous - start + 1 });
 
-  // 2. Alternatif (30 perbandingan: 6 pasangan x 5 kriteria)
-  if (pw.alternatives) {
-    Object.keys(pw.alternatives).forEach(function(key) {
-      var parts = key.split("-");
-      if (parts.length >= 4) {
-        var critCode = parts[1];
-        var leftAlt = parts[2];
-        var rightAlt = parts[3];
-        addRow("Alternatif", critCode, leftAlt, rightAlt, pw.alternatives[key]);
-      }
-    });
+  for (var g = groups.length - 1; g >= 0; g--) {
+    sheet.deleteRows(groups[g].start, groups[g].count);
   }
+}
 
-  // Batch write ke sheet (Sangat cepat, hanya 1 kali panggil API Google Sheets)
-  if (rowsToAppend.length > 0) {
-    var lastRow = sheet.getLastRow();
-    var range = sheet.getRange(lastRow + 1, 1, rowsToAppend.length, rowsToAppend[0].length);
-    range.setValues(rowsToAppend);
-  }
+function appendLog(spreadsheet, responseId, action, status, message) {
+  spreadsheet.getSheetByName('LOG').appendRow([
+    safeCell(responseId),
+    new Date().toISOString(),
+    safeCell(action),
+    safeCell(status),
+    safeCell(message)
+  ]);
+}
+
+function safeCell(value) {
+  if (value === null || value === undefined) return '';
+  var text = String(value);
+  return /^[=+\-@]/.test(text) ? "'" + text : text;
+}
+
+function numberOrBlank(value) {
+  return typeof value === 'number' && isFinite(value) ? value : '';
+}
+
+function jsonResponse(body) {
+  return ContentService
+    .createTextOutput(JSON.stringify(body))
+    .setMimeType(ContentService.MimeType.JSON);
 }

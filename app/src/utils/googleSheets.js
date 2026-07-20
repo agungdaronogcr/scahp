@@ -1,5 +1,15 @@
 import { buildPayload } from './export';
 
+async function fetchWithTimeout(url, options, timeoutMs = 20000) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(url, { ...options, signal: controller.signal });
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 export async function submitToGoogleSheets(webAppUrl, state, ahpResults) {
   if (!webAppUrl) {
     throw new Error('URL Google Apps Script belum diisi.');
@@ -7,39 +17,20 @@ export async function submitToGoogleSheets(webAppUrl, state, ahpResults) {
 
   const bodyText = JSON.stringify(buildPayload(state, ahpResults));
 
-  try {
-    const response = await fetch(webAppUrl, {
-      method: 'POST',
-      mode: 'cors',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: bodyText,
-    });
+  // Google Apps Script Web App tidak mengirim header CORS yang dapat dibaca
+  // browser. Menggunakan mode cors terlebih dahulu membuat request menunggu
+  // timeout lalu dikirim ulang. Kirim sekali dengan no-cors agar cepat dan
+  // mencegah submission ganda; hasil server tetap dicatat di worksheet LOG.
+  await fetchWithTimeout(webAppUrl, {
+    method: 'POST',
+    mode: 'no-cors',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: bodyText,
+  }, 30000);
 
-    const text = await response.text();
-    let body;
-    try {
-      body = JSON.parse(text);
-    } catch {
-      body = { ok: response.ok, message: text };
-    }
-
-    if (!response.ok || body.ok === false) {
-      throw new Error(body.error || body.message || 'Gagal menyimpan ke Google Sheet.');
-    }
-
-    return body;
-  } catch (error) {
-    if (!String(error.message || '').toLowerCase().includes('failed to fetch')) {
-      throw error;
-    }
-
-    await fetch(webAppUrl, {
-      method: 'POST',
-      mode: 'no-cors',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: bodyText,
-    });
-
-    return { ok: true, opaque: true, message: 'Data dikirim. Browser tidak mengizinkan pembacaan respons Google Apps Script.' };
-  }
+  return {
+    ok: true,
+    opaque: true,
+    message: 'Data telah dikirim ke Google Apps Script.'
+  };
 }

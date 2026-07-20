@@ -19,7 +19,7 @@ const LOCAL_STORAGE_KEY = 'ahp_eaudit_survey_state';
 
 // PLACEHOLDER GOOGLE SHEETS WEB APP URL
 // Ganti nilai di bawah ini dengan URL hasil deployment Google Apps Script Anda
-const GOOGLE_SHEET_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbwC5LV2bzuVV_z-K-R5a24ealz5kjADfOLMFuaOtE5cQRicslmc16S6OnsBpuEgRB8O/exec";
+const GOOGLE_SHEET_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbxQVULE_JarT4S4rRwcXryU9qcXwKrSFcMpyS03E5NIJkROnHsIre9QIwuEJpmtgjVuMQ/exec";
 
 // 10-step wizard sesuai mockup terbaru
 const STEPS = [
@@ -40,6 +40,7 @@ const STEP_INDEX = STEPS.reduce((acc, s, idx) => ({ ...acc, [s.id]: idx }), {});
 export default function App() {
   // 1. STATE INITIALIZATION
   const [step, setStep] = useState(0);
+  const [furthestStep, setFurthestStep] = useState(0);
   const [profile, setProfile] = useState({});
   const [consentChecked, setConsentChecked] = useState(false);
   const [answers, setAnswers] = useState({
@@ -53,6 +54,7 @@ export default function App() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
   const [submitResult, setSubmitResult] = useState(null);
+  const [isSavingDraft, setIsSavingDraft] = useState(false);
 
   // Generate unique submission/response ID
   const generateSubmissionId = () => {
@@ -78,6 +80,7 @@ export default function App() {
     if (step > 0 && !submitResult) {
       const stateToSave = {
         step,
+        furthestStep,
         profile,
         consentChecked,
         answers,
@@ -85,7 +88,11 @@ export default function App() {
       };
       localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(stateToSave));
     }
-  }, [step, profile, consentChecked, answers, submissionId, submitResult]);
+  }, [step, furthestStep, profile, consentChecked, answers, submissionId, submitResult]);
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [step]);
 
   const loadSavedState = () => {
     try {
@@ -93,6 +100,7 @@ export default function App() {
       if (saved) {
         const state = JSON.parse(saved);
         setStep(state.step || 0);
+        setFurthestStep(Math.max(state.step || 0, state.furthestStep || 0));
         setProfile(state.profile || {});
         setConsentChecked(state.consentChecked || false);
         setAnswers(state.answers || { criteria: {}, alternatives: {} });
@@ -114,15 +122,20 @@ export default function App() {
       setSubmissionId(generateSubmissionId());
       setHasSavedData(false);
       setStep(1);
+      setFurthestStep(1);
     }
   };
 
   // Navigation handlers
-  const handleNext = () => setStep(prev => Math.min(prev + 1, STEPS.length - 1));
+  const handleNext = () => {
+    const next = Math.min(step + 1, STEPS.length - 1);
+    setStep(next);
+    setFurthestStep(current => Math.max(current, next));
+  };
   const handlePrev = () => setStep(prev => Math.max(prev - 1, 0));
   const jumpToStep = (targetStep) => {
-    // Only allow jumping back, or jumping forward when reviewing on the final step
-    if (targetStep < step || step === STEPS.length - 1) {
+    // Semua langkah yang pernah dicapai tetap dapat dibuka saat meninjau jawaban.
+    if (targetStep <= furthestStep) {
       setStep(targetStep);
     }
   };
@@ -165,21 +178,42 @@ export default function App() {
     }
   };
 
+  const handleSaveDraft = async () => {
+    setIsSavingDraft(true);
+    setSubmitError('');
+    try {
+      await submitToGoogleSheets(GOOGLE_SHEET_WEBAPP_URL, {
+        submissionId,
+        submissionCode: submissionId,
+        submittedAt: new Date().toISOString(),
+        profile,
+        consent: consentChecked,
+        pairwise: answers,
+        action: 'saveDraft',
+      }, {});
+      alert('Draf berhasil disimpan ke Google Sheet.');
+    } catch (err) {
+      setSubmitError(err.message || 'Draf gagal disimpan.');
+    } finally {
+      setIsSavingDraft(false);
+    }
+  };
+
   // 4. PROGRESS & COMPLETENESS TRACKERS FOR SIDEBAR
   const checkStepStatus = (stepId) => {
     switch (stepId) {
       case 'landing': return true;
-      case 'stack_explanation': return true;
+      case 'stack_explanation': return furthestStep > STEP_INDEX.stack_explanation;
       case 'consent': return consentChecked;
       case 'profile':
         return !!(profile.nama && profile.instansi && profile.jabatan && profile.keahlian?.length > 0 && profile.pengalaman && profile.pemahaman_ahp);
-      case 'ahp_structure': return true;
-      case 'scale_guide': return true;
+      case 'ahp_structure': return furthestStep > STEP_INDEX.ahp_structure;
+      case 'scale_guide': return furthestStep > STEP_INDEX.scale_guide;
       case 'pw_criteria':
         return Object.keys(answers.criteria || {}).filter(k => answers.criteria[k]?.selected).length === 10;
       case 'pw_alternatives':
         return Object.keys(answers.alternatives || {}).filter(k => answers.alternatives[k]?.selected).length === 30;
-      case 'consistency_check': return true;
+      case 'consistency_check': return furthestStep > STEP_INDEX.consistency_check;
       case 'final': return false;
       default: return false;
     }
@@ -228,6 +262,8 @@ export default function App() {
             onPrev={handlePrev}
             answers={answers}
             setAnswers={setAnswers}
+            onSaveDraft={handleSaveDraft}
+            isSavingDraft={isSavingDraft}
           />
         );
       case 7:
@@ -237,6 +273,8 @@ export default function App() {
             onPrev={handlePrev}
             answers={answers}
             setAnswers={setAnswers}
+            onSaveDraft={handleSaveDraft}
+            isSavingDraft={isSavingDraft}
           />
         );
       case 8:
@@ -317,14 +355,14 @@ export default function App() {
                   <button
                     key={s.id}
                     onClick={() => jumpToStep(idx)}
-                    disabled={step !== STEPS.length - 1 && idx > step}
+                    disabled={idx > furthestStep}
                     className={`w-full flex items-center justify-between p-2.5 rounded-xl text-left text-xs font-semibold transition-all ${
                       isActive
                         ? 'bg-blue-900 text-white shadow-sm font-bold'
                         : isComplete
                         ? 'text-slate-800 hover:bg-slate-100'
                         : 'text-slate-400 hover:bg-slate-50'
-                    } ${idx > step && step !== STEPS.length - 1 ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                    } ${idx > furthestStep ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
                   >
                     <span className="truncate">{idx}. {s.label}</span>
                     {isComplete && (
