@@ -1,3 +1,5 @@
+import { CRITERIA, ALTERNATIVES } from '../data/constants.js';
+
 // Random Index (RI) table according to Thomas L. Saaty
 const RI_TABLE = {
   1: 0.00,
@@ -222,4 +224,37 @@ export function flattenPairwiseAnswers(pairwise = {}) {
   });
 
   return rows;
+}
+
+export function getExpectedPairwiseKeys() {
+  const criteriaKeys = generatePairwiseCombinations(CRITERIA)
+    .map(({ left, right }) => `${left.code}-${right.code}`);
+  const alternativePairs = generatePairwiseCombinations(ALTERNATIVES);
+  const alternativeKeys = CRITERIA.flatMap(criterion =>
+    alternativePairs.map(({ left, right }) => `alt-${criterion.code}-${left.code}-${right.code}`)
+  );
+  return { criteriaKeys, alternativeKeys };
+}
+
+export function sanitizePairwiseAnswers(pairwise = {}) {
+  const { criteriaKeys, alternativeKeys } = getExpectedPairwiseKeys();
+  const criteria = {};
+  const alternatives = {};
+
+  criteriaKeys.forEach(key => {
+    if (pairwise.criteria?.[key]) criteria[key] = pairwise.criteria[key];
+  });
+  alternativeKeys.forEach(key => {
+    if (pairwise.alternatives?.[key]) alternatives[key] = pairwise.alternatives[key];
+  });
+
+  return { criteria, alternatives };
+}
+
+export function countValidPairwiseAnswers(pairwise = {}) {
+  const sanitized = sanitizePairwiseAnswers(pairwise);
+  return {
+    criteria: Object.values(sanitized.criteria).filter(answer => answer?.selected).length,
+    alternatives: Object.values(sanitized.alternatives).filter(answer => answer?.selected).length,
+  };
 }

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { AlertTriangle, CheckCircle, ArrowLeft, Send, Loader, CheckCircle2, Download, FileText, Globe, Clipboard } from 'lucide-react';
 import { CRITERIA, ALTERNATIVES } from '../data/constants';
-import { evaluateAHPSection, generatePairwiseCombinations } from '../utils/ahp';
+import { countValidPairwiseAnswers, evaluateAHPSection, generatePairwiseCombinations } from '../utils/ahp';
 
 export function computeAHPResults(answers) {
   const critCodes = CRITERIA.map(c => c.code);
@@ -52,8 +52,9 @@ export default function FinalStep({
   const profileComplete = !!(profile.nama?.trim() && profile.instansi?.trim() && profile.jabatan?.trim() &&
     profile.keahlian?.length > 0 && profile.pengalaman && profile.pemahaman_ahp);
 
-  const critCount = Object.keys(answers.criteria || {}).filter(k => answers.criteria[k]?.selected).length;
-  const altCount = Object.keys(answers.alternatives || {}).filter(k => answers.alternatives[k]?.selected).length;
+  const validCounts = countValidPairwiseAnswers(answers);
+  const critCount = validCounts.criteria;
+  const altCount = validCounts.alternatives;
 
   const isComplete = profileComplete && critCount === 10 && altCount === 30;
   const results = isComplete ? computeAHPResults(answers) : null;

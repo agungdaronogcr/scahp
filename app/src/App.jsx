@@ -13,6 +13,7 @@ import ConsistencyCheckStep from './components/ConsistencyCheckStep';
 import FinalStep from './components/FinalStep';
 
 import { submitToGoogleSheets } from './utils/googleSheets';
+import { countValidPairwiseAnswers, sanitizePairwiseAnswers } from './utils/ahp';
 
 // STORAGE KEY
 const LOCAL_STORAGE_KEY = 'ahp_eaudit_survey_state';
@@ -103,7 +104,7 @@ export default function App() {
         setFurthestStep(Math.max(state.step || 0, state.furthestStep || 0));
         setProfile(state.profile || {});
         setConsentChecked(state.consentChecked || false);
-        setAnswers(state.answers || { criteria: {}, alternatives: {} });
+        setAnswers(sanitizePairwiseAnswers(state.answers));
         setSubmissionId(state.submissionId || generateSubmissionId());
         setHasSavedData(false);
       }
@@ -210,9 +211,9 @@ export default function App() {
       case 'ahp_structure': return furthestStep > STEP_INDEX.ahp_structure;
       case 'scale_guide': return furthestStep > STEP_INDEX.scale_guide;
       case 'pw_criteria':
-        return Object.keys(answers.criteria || {}).filter(k => answers.criteria[k]?.selected).length === 10;
+        return countValidPairwiseAnswers(answers).criteria === 10;
       case 'pw_alternatives':
-        return Object.keys(answers.alternatives || {}).filter(k => answers.alternatives[k]?.selected).length === 30;
+        return countValidPairwiseAnswers(answers).alternatives === 30;
       case 'consistency_check': return furthestStep > STEP_INDEX.consistency_check;
       case 'final': return false;
       default: return false;

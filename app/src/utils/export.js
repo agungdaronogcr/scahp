@@ -1,9 +1,9 @@
 import { CRITERIA, ALTERNATIVES } from '../data/constants';
-import { flattenPairwiseAnswers } from './ahp';
+import { flattenPairwiseAnswers, sanitizePairwiseAnswers } from './ahp';
 
 export function buildPayload(state, ahpResults = {}) {
   const profile = state.profile || {};
-  const pairwiseRows = flattenPairwiseAnswers(state.pairwise);
+  const pairwiseRows = flattenPairwiseAnswers(sanitizePairwiseAnswers(state.pairwise));
 
   return {
     action: state.action || 'submitFinal',
